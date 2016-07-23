@@ -1,1 +1,6 @@
-*.*~
+*.adf
+*.adf~
+*.bin
+*.bin~
+*.lst
+*.lst~
