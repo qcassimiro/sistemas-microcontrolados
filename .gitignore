@@ -1,5 +1,7 @@
+*.a51~
 *.adf~
 *.bin
 *.bin~
 *.lst
 *.lst~
+*.hex~
