@@ -12,7 +12,7 @@ sudo gtkterm
 ```
 
 ```bash
-pdftk locked.pdf input_pw password output unlocked.pdf
+pdftk *locked.pdf* input_pw *password* output *unlocked.pdf*
 ```
 
 ```bash
