@@ -1,5 +1,5 @@
-	org	0x0000
 table	equ	0x1000
+	org	0x0000
 	mov	p1, #0x00
 	mov	dptr, #table
 readt:	mov	a, #0x00
