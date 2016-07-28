@@ -15,6 +15,7 @@ led2	equ	p3.7
 ; var
 lcd_data	equ	0x41
 lcd_inst	equ	0x42
+lcd_curs	equ	0x43
 
 
 ;============================================================
@@ -34,6 +35,18 @@ begin:
 	call	lcd_begin
 	mov	dptr, #string0
 	call	lcd_send_string
+	mov	lcd_inst, #0xc0
+	call	lcd_send_instruction
+	mov	dptr, #string1
+	call	lcd_send_string
+	mov	lcd_inst, #0xcc
+	call	lcd_send_instruction
+	mov	lcd_data, #0x30
+	call	lcd_write_data
+	mov	lcd_inst, #0x8c
+	call	lcd_send_instruction
+	mov	lcd_data, #0x30
+	call	lcd_write_data
 	mov	ledcon, #0xa0
 	clr	led1
 	clr	led2
@@ -54,6 +67,7 @@ lcd_busy_check:
 	mov	c, lcd_bf
 	clr	lcd_e
 	jc	lcd_busy_check
+	clr	lcd_rw
 	ret
 
 lcd_send_instruction:
@@ -111,8 +125,8 @@ lcd_send_string_:
 ;===============================================================
 
 string0:
-	db	'    GRA :       ', 0x00
+	db	'    GRA  :', 0x00
 string1:
-	db	'    PEQ :       ', 0x00
+	db	'    PEQ  :', 0x00
 
 	end
