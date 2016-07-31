@@ -12,7 +12,19 @@ lcd_rw	equ	p2.6
 lcd_e	equ	p2.7
 led1	equ	p3.6
 led2	equ	p3.7
+;hdw
+key_a	equ	p3.0
+key_b	equ	p3.1
+sen_1	equ	p3.2
+sen_2	equ	p3.3
+buzzer	equ	p2.0
+led_a1	equ	p3.4
+led_a2	equ	p3.5
+led_b1	equ	p3.6
+led_b2	equ	p3.7
 ; var
+large	equ	0x44
+small	equ	0x45
 lcd_data	equ	0x41
 lcd_inst	equ	0x42
 lcd_curs	equ	0x43
@@ -48,9 +60,128 @@ begin:
 	mov	lcd_data, #0x30
 	call	lcd_write_data
 	mov	ledcon, #0xa0
-	clr	led1
-	clr	led2
-	jmp	$
+	mov	large, #0x00
+	mov	small, #0x00
+
+system_reset:
+	jnb	key_a, a2b_start
+	setb	led_a1
+	clr	led_a2
+	clr	led_b1
+	setb	led_b2
+	setb	buzzer
+	jmp	system_reset
+
+system_idle:
+	jnb	key_a, a2b_start
+	jnb	key_b, b2a_start
+	jmp	system_idle
+
+a2b_start:
+	setb	led_a1
+	clr	led_a2
+	clr	led_b1
+	setb	led_b2
+	jb	sen_1, $
+	jmp	a2b_measure
+
+a2b_measure:
+	jb	sen_1, a2b_small
+	jnb	sen_2, a2b_large
+	jmp	a2b_measure
+
+a2b_small:
+	mov	a, small
+	inc	a
+	cjne	a, #0x0a, a2b_small_ok
+	mov	a, #0x09
+a2b_small_ok:
+	mov	small, a
+	add	a, #0x30
+	mov	lcd_data, a
+	mov	lcd_inst, #0xcc
+	jb	sen_2, $
+	jmp	a2d_wait_finish
+
+a2b_large:
+	mov	a, large
+	inc	a
+	cjne	a, #0x0a, a2b_large_ok
+	mov	a, #0x09
+a2b_large_ok:
+	mov	large, a
+	add	a, #0x30
+	mov	lcd_data, a
+	mov	lcd_inst, #0x8c
+	jnb	sen_1, $
+	jmp	a2d_wait_finish
+
+a2d_wait_finish:
+	jnb	sen_2, $
+	call	lcd_send_instruction
+	call	lcd_write_data
+	setb	led_a1
+	clr	led_a2
+	setb	led_b1
+	clr	led_b2
+	setb	buzzer
+	clr	c
+	mov	a, small
+	add	a, large
+	add	a, #0xee
+	cpl	c
+	mov	buzzer, c
+	jmp	system_idle
+
+b2a_start:
+	clr	led_a1
+	setb	led_a2
+	setb	led_b1
+	clr	led_b2
+	jb	sen_2, $
+	jmp	b2a_measure
+
+b2a_measure:
+	jb	sen_2, b2a_small
+	jnb	sen_1, b2a_large
+	jmp	b2a_measure
+
+b2a_small:
+	mov	a, small
+	dec	a
+	cjne	a, #0xff, b2a_small_ok
+	mov	a, #0x00
+b2a_small_ok:
+	mov	small, a
+	add	a, #0x30
+	mov	lcd_data, a
+	mov	lcd_inst, #0xcc
+	jb	sen_1, $
+	jmp	b2a_wait_finish
+
+b2a_large:
+	mov	a, large
+	dec	a
+	cjne	a, #0xff, b2a_large_ok
+	mov	a, #0x00
+b2a_large_ok:
+	mov	large, a
+	add	a, #0x30
+	mov	lcd_data, a
+	mov	lcd_inst, #0x8c
+	jnb	sen_2, $
+	jmp	b2a_wait_finish
+
+b2a_wait_finish:
+	jnb	sen_1, $
+	call	lcd_send_instruction
+	call	lcd_write_data
+	setb	led_a1
+	clr	led_a2
+	setb	led_b1
+	clr	led_b2
+	setb	buzzer
+	jmp	system_idle
 
 
 ;===============================================================
