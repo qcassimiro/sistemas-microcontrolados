@@ -1,10 +1,10 @@
 	org	0x0000
-	mov	a, #0xff
-	clr	c
-shift:	rlc	a
-	mov	p1, a
-	call	delay
-	sjmp	shift
+	mov	a, #0xff	; seta todos os bits de 'a'
+	clr	c		; limpa 'c'
+shift:	rlc	a		; rotaciona 'a' com 'c', ligando 'a.0'
+	mov	p1, a		; move resultado para 'p1'
+	call	delay		; chama delay
+	sjmp	shift		; continua rotacionando
 delay:	mov	r5, #0xfa
 loop2:	call	dl1ms
 	call	dl1ms

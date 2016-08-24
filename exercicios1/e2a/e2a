@@ -1,0 +1,1 @@
+A única situação em que é possível transferir 256 bytes é se as duas memórias forem a memória de programa e a memória de dados externa. Não é possível realizar essa operação com a memória interna de dados (mesmo extendida) porque os registradores especiais seriam alterados.

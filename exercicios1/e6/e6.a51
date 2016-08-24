@@ -1,15 +1,15 @@
-table	equ	0x1000
+table	equ	0x1000		; tabela armazenada apos o programa
 	org	0x0000
-	mov	p1, #0x00
-	mov	dptr, #table
-readt:	mov	a, #0x00
-	movc	a, @a+dptr
-	jz	empty
-	orl	a, #0x30
-	mov	p1, a
-	inc	dptr
-	call	delay
-	jmp	readt
+	mov	p1, #0x00	; limpa 'p1'
+	mov	dptr, #table	; move endereco da tabela para 'dptr'
+readt:	mov	a, #0x00	; limpa 'a'
+	movc	a, @a+dptr	; copia o primeiro byte da tabela para 'a'
+	jz	empty		; se for zero, a tabela acabou
+	orl	a, #0x30	; acrescenta #0x30 para converter em ascii
+	mov	p1, a		; move para 'p1'
+	inc	dptr		; incrementa endereco
+	call	delay		; comeca delay
+	jmp	readt		; apos o delay, continua lendo a tabela
 delay:	mov	r5, #0x0a
 loop2:	call	dl1ms
 	call	dl1ms
