@@ -13,20 +13,26 @@ lcd_e	bit	p2.7
 led1	bit	p3.6
 led2	bit	p3.7
 ;hdw
-key_a	bit	p3.2
-key_b	bit	p3.3
-encoder	bit	p3.5
+key_a	bit	p3.0
+key_b	bit	p3.1
 motor	bit	p2.0
 ; var
 lcd_data	data	0x41
 lcd_inst	data	0x42
 lcd_curs	data	0x43
-tx1	data	0x44
+tx0	data	0x44
+tx0_reload	equ	0x05
+th0_reload	equ	0x3c
+tl0_reload	equ	0xb0
+tx1	data	0x45
 tx1_reload	equ	0x0a
 th1_reload	equ	0xfe
 tl1_reload	equ	0x70
-duty_cycle	data	0x45
-dc_counter	data	0x46
+duty_cycle	data	0x46
+dc_counter	data	0x47
+slot_count	equ	0x48
+revo_count	equ	0x49
+updt_disp	bit	p2.1
 
 
 ;============================================================
@@ -55,39 +61,73 @@ dc_counter	data	0x46
 
 	org	0x007b
 it_reset:
-;	call	lcd_begin
-;	mov	lcd_inst, #0x80
-;	call	lcd_send_instruction
-;	mov	dptr, #string0
-;	call	lcd_send_string
-;	mov	lcd_inst, #0xc0
-;	call	lcd_send_instruction
-;	mov	dptr, #string1
-;	call	lcd_send_string
-;	mov	lcd_inst, #0x8d
-;	call	lcd_send_instruction
-;	mov	lcd_data, #0x30
-;	call	lcd_write_data
-;	mov	lcd_inst, #0xcd
-;	call	lcd_send_instruction
-;	mov	lcd_data, #0x30
-;	call	lcd_write_data
 	mov	duty_cycle, #0x03
 	mov	dc_counter, duty_cycle
-	mov	tmod, #0x10
+	mov	slot_count, #0x08
+	mov	revo_count, #0x30
+	mov	tmod, #0x11
 	mov	tx1, #tx1_reload
 	mov	th1, #th1_reload
 	mov	tl1, #tl1_reload
-	mov	tcon, #0x05
+	mov	th0, #th0_reload
+	mov	tl0, #tl0_reload
 	setb	it0
-	setb	it1
 	setb	ex0
-	;setb	et0
-	setb	ex1
+	setb	et0
 	setb	et1
 	setb	ea
 	setb	tr1
-	jmp	$
+	setb	tr0
+	call	lcd_begin
+	mov	lcd_inst, #0x80
+	call	lcd_send_instruction
+	mov	dptr, #string_0
+	call	lcd_send_string
+	mov	lcd_inst, #0xc0
+	call	lcd_send_instruction
+	mov	dptr, #string_1
+	call	lcd_send_string
+	mov	lcd_inst, #0x85
+	call	lcd_send_instruction
+	mov	lcd_data, #0x30
+	call	lcd_write_data
+	setb	key_a
+	setb	key_b
+	setb	updt_disp
+loop:
+	jnb	key_a, key_a_action
+	jnb	key_b, key_b_action
+	jnb	updt_disp, updt_disp_action
+	jmp	loop
+
+key_a_action:
+	mov	a, duty_cycle
+	cjne	a, #0x03, key_a_action_dec
+	jnb	key_a, $
+	jmp	loop
+key_a_action_dec:
+	dec	duty_cycle
+	jnb	key_a, $
+	jmp	loop
+
+key_b_action:
+	mov	a, duty_cycle
+	cjne	a, #0x0a, key_b_action_inc
+	jnb	key_b, $
+	jmp	loop
+key_b_action_inc:
+	inc	duty_cycle
+	jnb	key_b, $
+	jmp	loop
+
+updt_disp_action:
+	mov	lcd_inst, #0x8f
+	call	lcd_send_instruction
+	mov	lcd_data, revo_count
+	call	lcd_write_data
+	setb	updt_disp
+	mov	revo_count, #0x30
+	jmp	loop
 
 
 ;===============================================================
@@ -95,28 +135,25 @@ it_reset:
 ;===============================================================
 
 it_external0:
-	mov	a, duty_cycle
-	cjne	a, #0x03, it_external0_dec
-	jmp	it_external0_end
-it_external0_dec:
-	dec	duty_cycle
-it_external0_end:
+	djnz	slot_count, it_external0_
+	inc	revo_count
+	mov	slot_count, #0x08
+it_external0_:
 	reti
 
 it_timer0:
+	djnz	tx0, it_timer1_end
+	clr	updt_disp
+	mov	tx0, #tx0_reload
+it_timer0_end:
+	mov	th0, #th0_reload
+	mov	tl0, #tl0_reload
 	reti
 
 it_external1:
-	mov	a, duty_cycle
-	cjne	a, #tx1_reload, it_external1_inc
-	jmp	it_external1_end
-it_external1_inc:
-	inc	duty_cycle
-it_external1_end:
 	reti
 
 it_timer1:
-	cpl	p2.1
 	djnz	dc_counter, it_timer1_continue
 	cpl	motor
 it_timer1_continue:
@@ -201,9 +238,9 @@ lcd_send_string_:
 ; db
 ;===============================================================
 
-string0:
-	db	' VEL AJUST :', 0x00
-string1:
-	db	' VEL ATUAL :', 0x00
+string_0:
+	db	'Rotacoes/45ms:  ', 0x00
+string_1:
+	db	'                ', 0x00
 
 	end
