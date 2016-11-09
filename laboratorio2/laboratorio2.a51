@@ -12,7 +12,7 @@ lcd_rw	bit	p2.6
 lcd_e	bit	p2.7
 led1	bit	p3.6
 led2	bit	p3.7
-;hdw
+; hdw
 key_a	bit	p3.0
 key_b	bit	p3.1
 motor	bit	p2.0
